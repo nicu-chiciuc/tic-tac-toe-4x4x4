@@ -2,7 +2,7 @@ import { useAuthActions } from "@convex-dev/auth/react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Authenticated, AuthLoading, Unauthenticated, useMutation, useQuery } from "convex/react";
 import { Check, Copy, Eye, RotateCcw, Share2, Swords } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { type PointerEvent, useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../../convex/_generated/api";
 
 export const Route = createFileRoute("/")({
@@ -189,10 +189,10 @@ function Room({ code, onLeave }: { code: string; onLeave: () => void }) {
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1800);
   };
-  const move = async (cell: number) => {
+  const move = async (skewer: number) => {
     setError("");
     try {
-      await play({ code, cell });
+      await play({ code, skewer });
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Move failed");
     }
@@ -259,21 +259,7 @@ function Room({ code, onLeave }: { code: string; onLeave: () => void }) {
         />
       </section>
       <section className="play-area">
-        <div className="board-stage">
-          <div className="axis axis-z">LEVEL</div>
-          <div className="board-stack">
-            {[3, 2, 1, 0].map((z) => (
-              <BoardLayer
-                key={z}
-                z={z}
-                moves={moves}
-                winning={game.winningCells}
-                disabled={!canMove}
-                onMove={move}
-              />
-            ))}
-          </div>
-        </div>
+        <PegBoard moves={moves} winning={game.winningCells} disabled={!canMove} onMove={move} />
         <aside className="game-panel">
           <div>
             <p className="panel-label">You are</p>
@@ -344,37 +330,94 @@ function PlayerCard({
   );
 }
 
-function BoardLayer({
-  z,
+function PegBoard({
   moves,
   winning,
   disabled,
   onMove,
 }: {
-  z: number;
   moves: Map<number, "X" | "O">;
   winning: number[];
   disabled: boolean;
-  onMove: (cell: number) => void;
+  onMove: (skewer: number) => void;
 }) {
+  const [rotation, setRotation] = useState({ x: 58, z: -38 });
+  const drag = useRef<{
+    x: number;
+    y: number;
+    startX: number;
+    startY: number;
+    moved: boolean;
+  } | null>(null);
+
+  const startDrag = (event: PointerEvent<HTMLDivElement>) => {
+    event.currentTarget.setPointerCapture(event.pointerId);
+    drag.current = {
+      x: event.clientX,
+      y: event.clientY,
+      startX: rotation.x,
+      startY: rotation.z,
+      moved: false,
+    };
+  };
+  const continueDrag = (event: PointerEvent<HTMLDivElement>) => {
+    if (!drag.current) return;
+    const dx = event.clientX - drag.current.x;
+    const dy = event.clientY - drag.current.y;
+    if (Math.abs(dx) + Math.abs(dy) > 5) drag.current.moved = true;
+    setRotation({
+      x: Math.max(22, Math.min(78, drag.current.startX - dy * 0.35)),
+      z: drag.current.startY + dx * 0.45,
+    });
+  };
+  const endDrag = () => {
+    window.setTimeout(() => {
+      drag.current = null;
+    }, 0);
+  };
+
   return (
-    <div className="board-layer">
-      <span className="level-tag">{z + 1}</span>
-      {Array.from({ length: 16 }, (_, local) => {
-        const cell = z * 16 + local;
-        const mark = moves.get(cell);
-        return (
-          <button
-            key={cell}
-            className={`cell ${mark ? `mark-${mark.toLowerCase()}` : ""} ${winning.includes(cell) ? "winning" : ""}`}
-            disabled={disabled || Boolean(mark)}
-            onClick={() => onMove(cell)}
-            aria-label={`Level ${z + 1}, row ${Math.floor(local / 4) + 1}, column ${(local % 4) + 1}${mark ? `, ${mark}` : ""}`}
-          >
-            {mark === "X" ? "×" : mark === "O" ? "○" : ""}
-          </button>
-        );
-      })}
+    <div className="board-stage">
+      <p className="drag-cue">Drag to rotate · tap a skewer to drop</p>
+      <div
+        className="peg-scene"
+        onPointerDown={startDrag}
+        onPointerMove={continueDrag}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+      >
+        <div
+          className="peg-board"
+          style={{ transform: `rotateX(${rotation.x}deg) rotateZ(${rotation.z}deg)` }}
+        >
+          {Array.from({ length: 16 }, (_, skewer) => {
+            const rings = [0, 1, 2, 3]
+              .map((z) => ({ z, cell: z * 16 + skewer, mark: moves.get(z * 16 + skewer) }))
+              .filter((ring) => ring.mark);
+            return (
+              <button
+                key={skewer}
+                className="skewer"
+                style={{ left: `${(skewer % 4) * 25}%`, top: `${Math.floor(skewer / 4) * 25}%` }}
+                disabled={disabled || rings.length === 4}
+                onClick={() => {
+                  if (!drag.current?.moved) onMove(skewer);
+                }}
+                aria-label={`Skewer row ${Math.floor(skewer / 4) + 1}, column ${(skewer % 4) + 1}, ${rings.length} rings`}
+              >
+                <span className="peg" />
+                {rings.map(({ z, cell, mark }) => (
+                  <span
+                    key={cell}
+                    className={`torus torus-${mark?.toLowerCase()} ${winning.includes(cell) ? "winning" : ""}`}
+                    style={{ transform: `translateZ(${18 + z * 44}px)` }}
+                  />
+                ))}
+              </button>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }

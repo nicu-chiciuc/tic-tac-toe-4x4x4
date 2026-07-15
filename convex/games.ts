@@ -110,10 +110,10 @@ export const join = mutation({
 });
 
 export const play = mutation({
-  args: { code: codeValidator, cell: v.number() },
+  args: { code: codeValidator, skewer: v.number() },
   returns: v.null(),
-  handler: async (ctx, { code, cell }) => {
-    if (!Number.isInteger(cell) || cell < 0 || cell >= 64) throw new Error("Invalid cell");
+  handler: async (ctx, { code, skewer }) => {
+    if (!Number.isInteger(skewer) || skewer < 0 || skewer >= 16) throw new Error("Invalid skewer");
     const userId = await requiredUserId(ctx);
     const game = await ctx.db
       .query("games")
@@ -123,11 +123,15 @@ export const play = mutation({
     const mark: Mark | null = game.playerX === userId ? "X" : game.playerO === userId ? "O" : null;
     if (!mark) throw new Error("Spectators cannot place pieces");
     if (game.turn !== mark) throw new Error("Wait for your turn");
-    const occupied = await ctx.db
+    const existingMoves = await ctx.db
       .query("moves")
-      .withIndex("by_gameId_and_cell", (q) => q.eq("gameId", game._id).eq("cell", cell))
-      .unique();
-    if (occupied) throw new Error("That cell is occupied");
+      .withIndex("by_gameId", (q) => q.eq("gameId", game._id))
+      .take(64);
+    const occupiedCells = new Set(existingMoves.map((move) => move.cell));
+    const cell = [0, 1, 2, 3]
+      .map((z) => z * 16 + skewer)
+      .find((candidate) => !occupiedCells.has(candidate));
+    if (cell === undefined) throw new Error("That skewer is full");
     await ctx.db.insert("moves", {
       gameId: game._id,
       cell,
@@ -135,11 +139,7 @@ export const play = mutation({
       playerId: userId,
       createdAt: Date.now(),
     });
-    const allMoves = await ctx.db
-      .query("moves")
-      .withIndex("by_gameId", (q) => q.eq("gameId", game._id))
-      .take(64);
-    const board = new Map(allMoves.map((move) => [move.cell, move.mark]));
+    const board = new Map(existingMoves.map((move) => [move.cell, move.mark]));
     board.set(cell, mark);
     const winningCells = findWinningLine(board, mark);
     const moveCount = game.moveCount + 1;
