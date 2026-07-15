@@ -351,7 +351,6 @@ function PegBoard({
   } | null>(null);
 
   const startDrag = (event: PointerEvent<HTMLDivElement>) => {
-    event.currentTarget.setPointerCapture(event.pointerId);
     drag.current = {
       x: event.clientX,
       y: event.clientY,
@@ -364,7 +363,10 @@ function PegBoard({
     if (!drag.current) return;
     const dx = event.clientX - drag.current.x;
     const dy = event.clientY - drag.current.y;
-    if (Math.abs(dx) + Math.abs(dy) > 5) drag.current.moved = true;
+    if (Math.abs(dx) + Math.abs(dy) > 5 && !drag.current.moved) {
+      drag.current.moved = true;
+      event.currentTarget.setPointerCapture(event.pointerId);
+    }
     setRotation({
       x: Math.max(22, Math.min(78, drag.current.startX - dy * 0.35)),
       z: drag.current.startY - dx * 0.45,
