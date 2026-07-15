@@ -349,8 +349,10 @@ function PegBoard({
     startY: number;
     moved: boolean;
   } | null>(null);
+  const suppressClick = useRef(false);
 
   const startDrag = (event: PointerEvent<HTMLDivElement>) => {
+    suppressClick.current = false;
     drag.current = {
       x: event.clientX,
       y: event.clientY,
@@ -365,7 +367,7 @@ function PegBoard({
     const dy = event.clientY - drag.current.y;
     if (Math.abs(dx) + Math.abs(dy) > 5 && !drag.current.moved) {
       drag.current.moved = true;
-      event.currentTarget.setPointerCapture(event.pointerId);
+      suppressClick.current = true;
     }
     setRotation({
       x: Math.max(22, Math.min(78, drag.current.startX - dy * 0.35)),
@@ -403,7 +405,7 @@ function PegBoard({
                 style={{ left: `${(skewer % 4) * 25}%`, top: `${Math.floor(skewer / 4) * 25}%` }}
                 disabled={disabled || rings.length === 4}
                 onClick={() => {
-                  if (!drag.current?.moved) onMove(skewer);
+                  if (!suppressClick.current) onMove(skewer);
                 }}
                 aria-label={`Skewer row ${Math.floor(skewer / 4) + 1}, column ${(skewer % 4) + 1}, ${rings.length} rings`}
               >
