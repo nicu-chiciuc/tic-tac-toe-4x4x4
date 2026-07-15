@@ -367,7 +367,7 @@ function PegBoard({
     if (Math.abs(dx) + Math.abs(dy) > 5) drag.current.moved = true;
     setRotation({
       x: Math.max(22, Math.min(78, drag.current.startX - dy * 0.35)),
-      z: drag.current.startY + dx * 0.45,
+      z: drag.current.startY - dx * 0.45,
     });
   };
   const endDrag = () => {
