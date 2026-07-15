@@ -9,9 +9,10 @@
  */
 
 import type * as auth from "../auth.js";
+import type * as gameLogic from "../gameLogic.js";
+import type * as games from "../games.js";
 import type * as guests from "../guests.js";
 import type * as http from "../http.js";
-import type * as todos from "../todos.js";
 
 import type {
   ApiFromModules,
@@ -21,9 +22,10 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
+  gameLogic: typeof gameLogic;
+  games: typeof games;
   guests: typeof guests;
   http: typeof http;
-  todos: typeof todos;
 }>;
 
 /**
