@@ -13,7 +13,7 @@ importers:
         version: 0.37.0
       '@convex-dev/auth':
         specifier: ^0.0.92
-        version: 0.0.92(@auth/core@0.37.0)(convex@1.42.1(react@19.2.6))(react@19.2.6)
+        version: 0.0.92(@auth/core@0.37.0)(convex@1.45.0(react@19.2.6))(react@19.2.6)
       '@tailwindcss/vite':
         specifier: ^4.3.0
         version: 4.3.0(@voidzero-dev/vite-plus-core@0.1.21(@types/node@25.7.0)(esbuild@0.27.3)(jiti@2.7.0)(typescript@6.0.3))
@@ -30,8 +30,8 @@ importers:
         specifier: ^2.1.1
         version: 2.1.1
       convex:
-        specifier: ^1.42.1
-        version: 1.42.1(react@19.2.6)
+        specifier: ^1.45.0
+        version: 1.45.0(react@19.2.6)
       lucide-react:
         specifier: ^1.14.0
         version: 1.14.0(react@19.2.6)
@@ -2576,9 +2576,9 @@ packages:
   convert-source-map@2.0.0:
     resolution: {integrity: sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==}
 
-  convex@1.42.1:
-    resolution: {integrity: sha512-yFKp4xerVuBwQqpuTtvosOk9F/fX0twZs+Xti3oj/MlwPUU90QuhgCYo/I2wvFBAFwXsmx9tXpf2q8ekh1+3ug==}
-    engines: {node: '>=18.0.0', npm: '>=7.0.0'}
+  convex@1.45.0:
+    resolution: {integrity: sha512-AV3B56Ptu/14d76g3urBJ50dwpiZa6uJaLT84OWox5aCwZIJiuAamdjv3lLHDzs8vv5kC31anEZohhUe3qJ2bA==}
+    engines: {node: '>=20.0.0', npm: '>=7.0.0'}
     hasBin: true
     peerDependencies:
       '@auth0/auth0-react': ^2.0.1
@@ -4423,12 +4423,12 @@ snapshots:
   '@cloudflare/workerd-windows-64@1.20260508.1':
     optional: true
 
-  '@convex-dev/auth@0.0.92(@auth/core@0.37.0)(convex@1.42.1(react@19.2.6))(react@19.2.6)':
+  '@convex-dev/auth@0.0.92(@auth/core@0.37.0)(convex@1.45.0(react@19.2.6))(react@19.2.6)':
     dependencies:
       '@auth/core': 0.37.0
       '@oslojs/crypto': 1.0.1
       '@oslojs/encoding': 1.1.0
-      convex: 1.42.1(react@19.2.6)
+      convex: 1.45.0(react@19.2.6)
       cookie: 1.1.1
       is-network-error: 1.3.2
       jose: 5.10.0
@@ -6416,7 +6416,7 @@ snapshots:
 
   convert-source-map@2.0.0: {}
 
-  convex@1.42.1(react@19.2.6):
+  convex@1.45.0(react@19.2.6):
     dependencies:
       esbuild: 0.27.0
       prettier: 3.8.3
