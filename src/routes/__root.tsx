@@ -25,8 +25,10 @@ function RootComponent() {
   return (
     <RootDocument>
       <ConvexClientProvider>
-        <Outlet />
-        <SamebaseAttribution />
+        <div className="app-shell">
+          <Outlet />
+          <SamebaseAttribution />
+        </div>
       </ConvexClientProvider>
     </RootDocument>
   );
