@@ -25,7 +25,7 @@ function RootComponent() {
   return (
     <RootDocument>
       <ConvexClientProvider>
-        <div className="app-shell">
+        <div className="flex min-h-screen flex-col">
           <Outlet />
           <footer className="px-4 py-3 text-center">
             <SamebaseAttribution />

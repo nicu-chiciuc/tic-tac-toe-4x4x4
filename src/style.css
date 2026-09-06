@@ -26,11 +26,6 @@ body {
     linear-gradient(135deg, #080c18, #10182b 60%, #090e1b);
   color: #eaf0ff;
 }
-.app-shell {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
 button,
 input {
   font: inherit;
