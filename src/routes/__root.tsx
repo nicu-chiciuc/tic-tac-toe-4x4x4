@@ -27,7 +27,9 @@ function RootComponent() {
       <ConvexClientProvider>
         <div className="app-shell">
           <Outlet />
-          <SamebaseAttribution />
+          <footer className="px-4 py-3 text-center">
+            <SamebaseAttribution />
+          </footer>
         </div>
       </ConvexClientProvider>
     </RootDocument>
