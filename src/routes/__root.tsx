@@ -27,7 +27,7 @@ function RootComponent() {
       <ConvexClientProvider>
         <div className="flex min-h-screen flex-col">
           <Outlet />
-          <footer className="px-4 py-3 text-center">
+          <footer className="px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] text-center">
             <SamebaseAttribution />
           </footer>
         </div>
