@@ -1,6 +1,7 @@
 import { HeadContent, Outlet, Scripts, createRootRoute } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { ConvexClientProvider } from "../lib/convex";
+import { SamebaseAttribution } from "../components/SamebaseAttribution";
 import appCss from "../style.css?url";
 
 export const Route = createRootRoute({
@@ -24,7 +25,14 @@ function RootComponent() {
   return (
     <RootDocument>
       <ConvexClientProvider>
-        <Outlet />
+        <div className="flex min-h-screen flex-col">
+          <Outlet />
+          <footer className="px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] text-[#9daac3]">
+            <div className="mx-auto w-full max-w-[1320px] text-right">
+              <SamebaseAttribution />
+            </div>
+          </footer>
+        </div>
       </ConvexClientProvider>
     </RootDocument>
   );
