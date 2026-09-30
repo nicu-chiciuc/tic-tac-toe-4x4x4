@@ -15,8 +15,8 @@ script. `wrangler.jsonc` owns the asset directory, SPA fallback, and native Work
 TypeScript helper scripts directly.
 
 Local development runs Convex and the frontend together through `vp run dev`.
-Cloudflare builds deploy Convex with the trigger-specific `CONVEX_DEPLOY_KEY`, then build the
-static frontend. Production and preview triggers store different values under that same name. Local deploy dry-runs run that same build path before asking
+Cloudflare builds build the frontend and deploy Convex with the trigger-specific
+`CONVEX_DEPLOY_KEY`. Production and preview triggers store different values under that same name. Local deploy dry-runs run that same build path before asking
 Wrangler to validate the upload.
 
 The app includes minimal auth out of the box: users can continue as guests, and
@@ -155,7 +155,7 @@ pnpm run dev:worktree
 ## 6. Validate deploy config locally
 
 ```sh
-pnpm run deploy:dry-run --name <connected-worker-name>
+pnpm run deploy:dry-run --name tic-tac-toe-4x4x4
 ```
 
 This builds the app, then asks Wrangler to validate the production package without publishing it.
@@ -165,7 +165,7 @@ After provider setup, build before a manual preview:
 
 ```sh
 pnpm run build
-pnpm run deploy:preview --worker-name <connected-worker-name>
+pnpm run deploy:preview --worker-name tic-tac-toe-4x4x4
 ```
 
 Wrangler `--name` selects the Preview. Workers Builds supplies the parent Worker name.
