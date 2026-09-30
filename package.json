@@ -13,13 +13,11 @@
     "dev:frontend": "vp dev",
     "dev:worktree": "node ./scripts/run-worktree-dev.ts",
     "check": "tsc && tsc --project convex/tsconfig.json && pnpm run verify:cloudflare-redirects",
-    "build": "vp run build:cloudflare",
+    "build": "node ./scripts/build-cloudflare.ts",
     "build:app": "tsc && pnpm run generate:cloudflare-redirects && vp build",
-    "build:cloudflare": "node ./scripts/build-cloudflare.ts",
-    "deploy": "node ./scripts/deploy-cloudflare.ts deploy",
-    "deploy:preview": "node ./scripts/deploy-cloudflare.ts preview",
-    "deploy:dry-run": "node ./scripts/deploy-cloudflare.ts deploy --dry-run",
-    "deploy:preview:dry-run": "node ./scripts/deploy-cloudflare.ts preview --dry-run",
+    "deploy": "wrangler deploy",
+    "deploy:preview": "wrangler preview",
+    "deploy:dry-run": "pnpm run build && wrangler deploy --dry-run",
     "generate:cloudflare-redirects": "node ./scripts/generate-cloudflare-redirects.ts",
     "verify:cloudflare-redirects": "pnpm run generate:cloudflare-redirects && git diff --exit-code -- public/_redirects",
     "preview": "vp preview",
@@ -54,7 +52,7 @@
     "vite": "npm:@voidzero-dev/vite-plus-core@0.1.24",
     "vite-plus": "0.1.24",
     "vitest": "npm:@voidzero-dev/vite-plus-test@0.1.24",
-    "wrangler": "4.118.0"
+    "wrangler": "4.136.2"
   },
   "packageManager": "pnpm@11.1.1"
 }

@@ -10,15 +10,13 @@ guest sessions.
 
 Cloudflare Workers Static Assets serves the static files. The Cloudflare
 dashboard runs `pnpm run build`, which delegates to the Cloudflare-aware build
-script. `wrangler.jsonc` owns the asset directory, SPA fallback, and preview URL
-behavior.
+script. `wrangler.jsonc` owns the asset directory, SPA fallback, and native Worker Previews.
 `.node-version` pins Workers Builds to Node 24 so `node` can run the small
 TypeScript helper scripts directly.
 
 Local development runs Convex and the frontend together through `vp run dev`.
-Cloudflare builds run Convex deploy first by selecting `CONVEX_DEPLOY_KEY` for
-`main` and `PREVIEW_CONVEX_DEPLOY_KEY` for other branches, then build the
-static frontend. Local deploy dry-runs run that same build path before asking
+Cloudflare builds build the frontend and deploy Convex with the trigger-specific
+`CONVEX_DEPLOY_KEY`. Production and preview triggers store different values under that same name. Local deploy dry-runs run that same build path before asking
 Wrangler to validate the upload.
 
 The app includes minimal auth out of the box: users can continue as guests, and
@@ -64,7 +62,7 @@ to this key. Cloudflare Workers Builds must store it as the build secret named
 From the project settings, create a Preview deploy key. Preview deploy keys use
 Convex's separate project-level preview flow and do not ask for the production
 permission list above. Cloudflare Workers Builds must store it as the build
-secret named `PREVIEW_CONVEX_DEPLOY_KEY`.
+secret named `CONVEX_DEPLOY_KEY` under Previews Base in Settings > Builds.
 
 ## 4. Create a Cloudflare Worker from GitHub
 
@@ -79,19 +77,16 @@ Use these settings:
 - Deploy command: `pnpm run deploy`
 - Non-production branch deploy command: `pnpm run deploy:preview`
 - Path: keep `/`
-- Build secret: `CONVEX_DEPLOY_KEY`, using the production key with only
+- Production build secret: `CONVEX_DEPLOY_KEY`, using the production key with only
   `deployment:deploy`, `deployment:env:view`, `deployment:env:write`, and
   `deployment:data:view`
-- Build secret: `PREVIEW_CONVEX_DEPLOY_KEY`, using the project Preview deploy
+- Previews Base build secret: `CONVEX_DEPLOY_KEY`, using the project Preview deploy
   key
 
-Cloudflare Workers Builds can store build variables per production/preview
-trigger through the API, but the dashboard setup path does not expose a
-Pages-style environment selector for build variables. This template uses the two
-secrets above and lets `scripts/build-cloudflare.ts` select the right one from
-`WORKERS_CI_BRANCH`. See
-[`docs/cloudflare-workers-builds.md`](./docs/cloudflare-workers-builds.md) for
-the deployment contract.
+Cloudflare exposes Production and Previews Base build settings under Settings > Builds.
+For an existing connection, complete the one-time Set up Worker Previews step and restore these
+commands afterward. See the [Worker Previews migration guide](https://samebase.com/docs/cloudflare-previews-migration)
+for the switch, verification, and old-secret cleanup steps.
 
 The repository's scripts and `wrangler.jsonc` provide the deployment contract:
 
@@ -99,12 +94,11 @@ The repository's scripts and `wrangler.jsonc` provide the deployment contract:
 // package.json
 {
   "scripts": {
-    "build": "vp run build:cloudflare",
+    "build": "node ./scripts/build-cloudflare.ts",
     "build:app": "tsc && pnpm run generate:cloudflare-redirects && vp build",
-    "build:cloudflare": "node ./scripts/build-cloudflare.ts",
     "check": "tsc && tsc --project convex/tsconfig.json && pnpm run verify:cloudflare-redirects",
-    "deploy": "node ./scripts/deploy-cloudflare.ts deploy",
-    "deploy:preview": "node ./scripts/deploy-cloudflare.ts preview",
+    "deploy": "wrangler deploy",
+    "deploy:preview": "wrangler preview",
     "generate:cloudflare-redirects": "node ./scripts/generate-cloudflare-redirects.ts",
     "verify:cloudflare-redirects": "pnpm run generate:cloudflare-redirects && git diff --exit-code -- public/_redirects",
   },
@@ -113,6 +107,7 @@ The repository's scripts and `wrangler.jsonc` provide the deployment contract:
 // wrangler.jsonc
 {
   "preview_urls": true,
+  "previews": {},
   "assets": {
     "directory": "./dist/client",
     "html_handling": "none",
@@ -160,20 +155,20 @@ pnpm run dev:worktree
 ## 6. Validate deploy config locally
 
 ```sh
-CLOUDFLARE_WORKER_NAME=my-worker pnpm run deploy:dry-run
+pnpm run deploy:dry-run --name tic-tac-toe-4x4x4
 ```
 
-This runs the Cloudflare build path, then asks Wrangler to validate the upload
-without publishing anything. If neither Convex deploy key is set locally,
-the Cloudflare build script skips Convex deploy and only builds the static app.
-When a Convex deploy key is selected, the build script creates Convex Auth JWT
-keys in that deployment if they are missing.
+This builds the app, then asks Wrangler to validate the production package without publishing it.
+Local builds do not deploy Convex. Worker Previews has no dry-run mode.
 
-Preview-version checks use the same local name:
+After provider setup, build before a manual preview:
 
 ```sh
-CLOUDFLARE_WORKER_NAME=my-worker pnpm run deploy:preview:dry-run
+pnpm run build
+pnpm run deploy:preview --worker-name tic-tac-toe-4x4x4
 ```
+
+Wrangler `--name` selects the Preview. Workers Builds supplies the parent Worker name.
 
 ## Why Workers
 
