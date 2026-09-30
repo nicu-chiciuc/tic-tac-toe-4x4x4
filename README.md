@@ -85,7 +85,7 @@ Use these settings:
 
 Cloudflare exposes Production and Previews Base build settings under Settings > Builds.
 For an existing connection, complete the one-time Set up Worker Previews step and restore these
-commands afterward. See [`docs/cloudflare-workers-builds.md`](./docs/cloudflare-workers-builds.md)
+commands afterward. See the [Worker Previews migration guide](https://samebase.com/docs/cloudflare-previews-migration)
 for the switch, verification, and old-secret cleanup steps.
 
 The repository's scripts and `wrangler.jsonc` provide the deployment contract:
@@ -94,12 +94,11 @@ The repository's scripts and `wrangler.jsonc` provide the deployment contract:
 // package.json
 {
   "scripts": {
-    "build": "vp run build:cloudflare",
+    "build": "node ./scripts/build-cloudflare.ts",
     "build:app": "tsc && pnpm run generate:cloudflare-redirects && vp build",
-    "build:cloudflare": "node ./scripts/build-cloudflare.ts",
     "check": "tsc && tsc --project convex/tsconfig.json && pnpm run verify:cloudflare-redirects",
-    "deploy": "node ./scripts/deploy-cloudflare.ts deploy",
-    "deploy:preview": "node ./scripts/deploy-cloudflare.ts preview",
+    "deploy": "wrangler deploy",
+    "deploy:preview": "wrangler preview",
     "generate:cloudflare-redirects": "node ./scripts/generate-cloudflare-redirects.ts",
     "verify:cloudflare-redirects": "pnpm run generate:cloudflare-redirects && git diff --exit-code -- public/_redirects",
   },
@@ -107,6 +106,7 @@ The repository's scripts and `wrangler.jsonc` provide the deployment contract:
 
 // wrangler.jsonc
 {
+  "preview_urls": true,
   "previews": {},
   "assets": {
     "directory": "./dist/client",
@@ -161,9 +161,10 @@ pnpm run deploy:dry-run --name <connected-worker-name>
 This builds the app, then asks Wrangler to validate the production package without publishing it.
 Local builds do not deploy Convex. Worker Previews has no dry-run mode.
 
-After provider setup, a manual preview uses:
+After provider setup, build before a manual preview:
 
 ```sh
+pnpm run build
 pnpm run deploy:preview --worker-name <connected-worker-name>
 ```
 
