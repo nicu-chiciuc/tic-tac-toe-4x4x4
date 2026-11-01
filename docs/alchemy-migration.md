@@ -30,6 +30,14 @@ production deployment, Worker account, and Worker tag. Do not copy Fourfold's id
    `cf builds workers delete <tag> --force` in that account. This removes build
    settings and triggers and cancels unfinished builds. It keeps the Worker.
    Verify the trigger list is empty and the configuration lookup returns 404.
+   Check `cf builds list --external-script-id <tag> --per-page 100` for
+   unfinished runs. List production keys with the Management API endpoint
+   `/deployments/<production>/list_deploy_keys` and delete old keys by name:
+   `npx convex deployment token delete "<name>" --deployment <production>`.
+   List preview keys with `/projects/<id>/list_preview_deploy_keys?includeManaged=true`.
+   Revoke each old preview key through POST
+   `/projects/<id>/delete_preview_deploy_key` with `{ "id": "<name>" }`.
+   Capture responses and print metadata only. Re-read both lists before merging.
 5. Add hosting 0.14.0, the TanStack hosting adapter 0.11.0,
    `@samebase/alchemy-convex` 0.20.0, Alchemy and its GitHub provider
    2.0.0-beta.84, and Effect/platform-node 4.0.5. Pin
@@ -73,7 +81,8 @@ production deployment, Worker account, and Worker tag. Do not copy Fourfold's id
     `gh workflow run alchemy.yml -f adopt=true`.
 12. Verify the original production deployment and project ids still match.
     Export again and compare all table counts before browser testing creates
-    guest sessions or games. Check the site's `convex.site` URL and play a game.
+    guest sessions or games. Use the exact `{ url }` from the Actions run, including any region in its host.
+    Check that site and play a game.
     If a schema push rejects existing rows, widen only; never clear a table or
     import with replacement.
 13. Open a small follow-up PR adding chessmerge's preview deploy and cleanup

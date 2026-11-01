@@ -2,7 +2,7 @@
 # the production deployment. A pull request from this repository deploys the stage
 # `pr-<number>`, a preview with that name; closing the pull request destroys the
 # stage and deletes the preview. The state of every stage is in the
-# `alchemy-state` project of the team, under the stack name GITHUB_REPOSITORY.
+# `alchemy-state-store` project of the team, under the stack name GITHUB_REPOSITORY.
 # Every run needs only the team token CONVEX_ACCESS_TOKEN; it mints the deploy
 # keys itself. Only the Alchemy steps get the secret.
 name: Alchemy
@@ -64,7 +64,7 @@ jobs:
             echo "skip=true" >> "$GITHUB_OUTPUT"
           fi
       - name: Verify the existing Convex project
-        if: steps.keys.outputs.skip != 'true' && github.event_name != 'pull_request'
+        if: steps.keys.outputs.skip != 'true'
         run: node ./scripts/verify-convex-project.ts
         env:
           CONVEX_ACCESS_TOKEN: ${{ secrets.CONVEX_ACCESS_TOKEN }}
@@ -74,3 +74,15 @@ jobs:
         env:
           ADOPT: ${{ inputs.adopt && '--adopt' || '' }}
           CONVEX_ACCESS_TOKEN: ${{ secrets.CONVEX_ACCESS_TOKEN }}
+      - name: Deploy the preview
+        if: steps.keys.outputs.skip != 'true' && github.event_name == 'pull_request' && github.event.action != 'closed'
+        run: pnpm exec alchemy deploy --stage "$STAGE" --yes --no-input
+        env:
+          CONVEX_ACCESS_TOKEN: ${{ secrets.CONVEX_ACCESS_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+      - name: Destroy the preview
+        if: steps.keys.outputs.skip != 'true' && github.event_name == 'pull_request' && github.event.action == 'closed'
+        run: pnpm exec alchemy destroy --stage "$STAGE" --yes --no-input
+        env:
+          CONVEX_ACCESS_TOKEN: ${{ secrets.CONVEX_ACCESS_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
