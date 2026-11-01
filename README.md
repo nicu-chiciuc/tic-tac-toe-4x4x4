@@ -2,7 +2,7 @@
 
 Play 4×4×4 tic-tac-toe with a friend. Guest sessions and games use Convex.
 
-Production is https://majestic-cormorant-166.convex.site. The original Worker at
+Production is https://majestic-cormorant-166.eu-west-1.convex.site. The original Worker at
 https://tic-tac-toe-4x4x4.pfp.workers.dev stays deployed with its last build.
 Its Workers Builds connection is removed.
 
@@ -14,8 +14,8 @@ The stack name is `nicu-chiciuc/tic-tac-toe-4x4x4`.
 
 - A push to `main` deploys `prod`, the existing production deployment
   `majestic-cormorant-166` in project `2587920`.
-- After the migration's production adoption, a follow-up PR enables `pr-<number>`
-  previews for same-repository pull requests. Closing a PR deletes its preview.
+- A same-repository pull request deploys `pr-<number>` and comments its URL.
+  Closing the PR deletes its preview.
 - Fork PRs, other branch pushes, and non-main manual runs deploy nothing.
 
 The stack runs `pnpm run deploy` when its source hash changes. That command runs
