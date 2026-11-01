@@ -38,26 +38,9 @@ describe("ensure-convex-auth", () => {
     expect(calls[3]?.[4]).toBeTruthy();
   });
 
-  it("creates auth keys in the same named preview as the build", async () => {
-    const calls: string[][] = [];
-    await ensureConvexAuth({ WORKERS_CI_BRANCH: "nicu-preview-smoke" }, async (args) => {
-      calls.push(args);
-      return { code: 0, stdout: "", stderr: "" };
-    });
-
-    expect(calls.slice(0, 2)).toEqual([
-      ["env", "get", "JWT_PRIVATE_KEY", "--preview-name", "nicu-preview-smoke"],
-      ["env", "get", "JWKS", "--preview-name", "nicu-preview-smoke"],
-    ]);
-    expect(calls.slice(2).map((args) => args.slice(0, 6))).toEqual([
-      ["env", "set", "--preview-name", "nicu-preview-smoke", "--", "JWT_PRIVATE_KEY"],
-      ["env", "set", "--preview-name", "nicu-preview-smoke", "--", "JWKS"],
-    ]);
-  });
-
   it("keeps existing preview auth keys on a rebuild", async () => {
     const runConvex = vi.fn(async () => ({ code: 0, stdout: "configured", stderr: "" }));
-    await ensureConvexAuth({ WORKERS_CI_BRANCH: "nicu-preview-smoke" }, runConvex);
+    await ensureConvexAuth({ CONVEX_DEPLOY_KEY: "deployment-key" }, runConvex);
 
     expect(runConvex.mock.calls).toHaveLength(2);
   });
@@ -65,13 +48,11 @@ describe("ensure-convex-auth", () => {
   it("does not replace auth keys when an environment read fails", async () => {
     const calls: string[][] = [];
     await expect(
-      ensureConvexAuth({ WORKERS_CI_BRANCH: "nicu-preview-smoke" }, async (args) => {
+      ensureConvexAuth({ CONVEX_DEPLOY_KEY: "deployment-key" }, async (args) => {
         calls.push(args);
         return { code: 1, stdout: "", stderr: "Environment read failed" };
       }),
     ).rejects.toThrow("Could not read Convex environment variable JWT_PRIVATE_KEY.");
-    expect(calls).toEqual([
-      ["env", "get", "JWT_PRIVATE_KEY", "--preview-name", "nicu-preview-smoke"],
-    ]);
+    expect(calls).toEqual([["env", "get", "JWT_PRIVATE_KEY"]]);
   });
 });
