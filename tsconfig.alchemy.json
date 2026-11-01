@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "skipLibCheck": true
+  },
+  "include": [
+    "alchemy.run.ts",
+    "scripts/verify-convex-project.ts",
+    "scripts/reject-workers-build.ts"
+  ]
+}

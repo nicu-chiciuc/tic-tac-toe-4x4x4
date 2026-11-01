@@ -118,8 +118,7 @@ export async function ensureConvexAuth(
   env: NodeJS.ProcessEnv,
   runConvex: RunConvex = runConvexCli,
 ) {
-  const branch = env["WORKERS_CI_BRANCH"];
-  const selectionArgs = branch && branch !== "main" ? ["--preview-name", branch] : [];
+  const selectionArgs: string[] = [];
   const existingPrivateKey = await readConvexEnv("JWT_PRIVATE_KEY", env, selectionArgs, runConvex);
   const existingJwks = await readConvexEnv("JWKS", env, selectionArgs, runConvex);
 

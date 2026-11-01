@@ -1,193 +1,66 @@
-# Deploy a production-ready, real-time web app with Cloudflare Workers
+# Fourfold
 
-<details>
-<summary>Technical Summary</summary>
+Play 4×4×4 tic-tac-toe with a friend. Guest sessions and games use Convex.
 
-This template is a client-first TanStack Start app. TanStack Start is used in
-SPA mode, so the build creates a static `dist/client/index.html` shell and
-client assets. The browser talks to Convex for real-time data and Convex Auth
-guest sessions.
+Production is https://majestic-cormorant-166.convex.site. The original Worker at
+https://tic-tac-toe-4x4x4.pfp.workers.dev stays deployed with its last build.
+Its Workers Builds connection is removed.
 
-Cloudflare Workers Static Assets serves the static files. The Cloudflare
-dashboard runs `pnpm run build`, which delegates to the Cloudflare-aware build
-script. `wrangler.jsonc` owns the asset directory, SPA fallback, and native Worker Previews.
-`.node-version` pins Workers Builds to Node 24 so `node` can run the small
-TypeScript helper scripts directly.
+## Build and deploy
 
-Local development runs Convex and the frontend together through `vp run dev`.
-Cloudflare builds build the frontend and deploy Convex with the trigger-specific
-`CONVEX_DEPLOY_KEY`. Production and preview triggers store different values under that same name. Local deploy dry-runs run that same build path before asking
-Wrangler to validate the upload.
+`alchemy.run.ts` owns deployment. GitHub Actions uses the repository secret
+`CONVEX_ACCESS_TOKEN` and stores state in team `nicu`'s `alchemy-state-store`.
+The stack name is `nicu-chiciuc/tic-tac-toe-4x4x4`.
 
-The app includes minimal auth out of the box: users can continue as guests, and
-the public todo list keeps guest author attribution.
+- A push to `main` deploys `prod`, the existing production deployment
+  `majestic-cormorant-166` in project `2587920`.
+- After the migration's production adoption, a follow-up PR enables `pr-<number>`
+  previews for same-repository pull requests. Closing a PR deletes its preview.
+- Fork PRs, other branch pushes, and non-main manual runs deploy nothing.
 
-</details>
+The stack runs `pnpm run deploy` when its source hash changes. That command runs
+`convex-hosting deploy --build "pnpm run build:app" --dist dist/client
+--html-handling drop-trailing-slash`. It builds the site, uploads its files, and
+pushes functions together. The deploy script refuses Workers Builds.
 
-## 1. Create accounts
+Production resources retain their default removal policy. The project uses its
+existing slug, which cannot create a replacement project. The workflow verifies
+its project id, team, name, and production deployment before deploying.
 
-You need:
+The app keeps `@convex-dev/auth` 0.0.94. Production auth variables stay in place.
+New previews inherit `JWT_PRIVATE_KEY`, `JWKS`, and `SITE_URL` from the project's
+preview defaults. No auth keys are stored in Git or Alchemy state.
 
-- [GitHub](https://github.com/)  
-  <img src="./docs/logos/github.svg" alt="GitHub" height="32">
-- [Convex](https://www.convex.dev/)  
-  <img src="./docs/logos/convex.svg" alt="Convex" height="32">
-- [Cloudflare](https://www.cloudflare.com/)  
-  <img src="./docs/logos/cloudflare.jpg" alt="Cloudflare" height="32">
+## Develop locally
 
-## 2. Copy the app
-
-Create your own GitHub repository from this template.
-
-If you want the clean teaching history, fork the repository instead of using
-GitHub's template button. The template button is simpler, but it squashes the
-history into one commit.
-
-## 3. Create a Convex project
-
-Open [dashboard.convex.dev](https://dashboard.convex.dev/) and create a project.
-
-From the production deployment settings, create the production deploy key with
-exactly these permissions:
-
-- `deployment:deploy`
-- `deployment:env:view`
-- `deployment:env:write`
-- `deployment:data:view`
-
-Do not grant data write, function-run, logs, backups, or integration permissions
-to this key. Cloudflare Workers Builds must store it as the build secret named
-`CONVEX_DEPLOY_KEY`.
-
-From the project settings, create a Preview deploy key. Preview deploy keys use
-Convex's separate project-level preview flow and do not ask for the production
-permission list above. Cloudflare Workers Builds must store it as the build
-secret named `CONVEX_DEPLOY_KEY` under Previews Base in Settings > Builds.
-
-## 4. Create a Cloudflare Worker from GitHub
-
-In Cloudflare, open Workers & Pages and create a Worker connected to your
-GitHub repository.
-
-Use these settings:
-
-- Project name: any valid Worker name
-- Production branch: `main`
-- Build command: keep `pnpm run build`
-- Deploy command: `pnpm run deploy`
-- Non-production branch deploy command: `pnpm run deploy:preview`
-- Path: keep `/`
-- Production build secret: `CONVEX_DEPLOY_KEY`, using the production key with only
-  `deployment:deploy`, `deployment:env:view`, `deployment:env:write`, and
-  `deployment:data:view`
-- Previews Base build secret: `CONVEX_DEPLOY_KEY`, using the project Preview deploy
-  key
-
-Cloudflare exposes Production and Previews Base build settings under Settings > Builds.
-For an existing connection, complete the one-time Set up Worker Previews step and restore these
-commands afterward. See the [Worker Previews migration guide](https://samebase.com/docs/cloudflare-previews-migration)
-for the switch, verification, and old-secret cleanup steps.
-
-The repository's scripts and `wrangler.jsonc` provide the deployment contract:
-
-```jsonc
-// package.json
-{
-  "scripts": {
-    "build": "node ./scripts/build-cloudflare.ts",
-    "build:app": "tsc && pnpm run generate:cloudflare-redirects && vp build",
-    "check": "tsc && tsc --project convex/tsconfig.json && pnpm run verify:cloudflare-redirects",
-    "deploy": "wrangler deploy",
-    "deploy:preview": "wrangler preview",
-    "generate:cloudflare-redirects": "node ./scripts/generate-cloudflare-redirects.ts",
-    "verify:cloudflare-redirects": "pnpm run generate:cloudflare-redirects && git diff --exit-code -- public/_redirects",
-  },
-}
-
-// wrangler.jsonc
-{
-  "preview_urls": true,
-  "previews": {},
-  "assets": {
-    "directory": "./dist/client",
-    "html_handling": "none",
-    // Cloudflare SPA mode serves /index.html for unknown app routes. Keep
-    // vite.config.ts emitting the TanStack Start shell there.
-    "not_found_handling": "single-page-application",
-  },
-}
-```
-
-`scripts/cloudflare-prerender-pages.ts` is the source of truth for public
-prerendered pages. `scripts/generate-cloudflare-redirects.ts` rewrites only the
-tagged generated block in `public/_redirects`, so custom Cloudflare redirects can
-live outside that block. `_redirects` is applied before asset serving, so keep
-custom rules exact; Cloudflare SPA mode owns app-route fallback through
-`/index.html`. The committed `_redirects` file is the review surface for the
-generated exact aliases.
-
-The `.node-version` file pins Cloudflare's build image to Node 24. That keeps
-the helper scripts typed while still running them with plain `node`.
-
-## 5. Run locally
-
-Install dependencies:
+Use Node 24 and the package manager pinned in `package.json`.
 
 ```sh
 pnpm install
-```
-
-Start Convex and TanStack Start together:
-
-```sh
 pnpm run dev
 ```
 
-The dev script creates Convex Auth JWT keys in your development deployment if
-they are missing.
+A fresh checkout needs a server build and a hosting version file before its
+first Convex push. Start `pnpm exec convex dev` to select development, then run
+`pnpm run deploy:dev` in another terminal. Keep production deploy keys unset.
+The existing `scripts/ensure-convex-auth.ts` initializes missing development
+auth keys when `pnpm run dev` starts.
 
-For an isolated local agent or worktree backend:
+Generated Convex bindings are committed. To regenerate them after a backend
+change, build first, then run `pnpm exec convex codegen`. This command does not
+push functions. Never commit `.convex-hosting`, `dist`, exports, or credentials.
 
-```sh
-pnpm run dev:worktree
-```
-
-## 6. Validate deploy config locally
-
-```sh
-pnpm run deploy:dry-run --name tic-tac-toe-4x4x4
-```
-
-This builds the app, then asks Wrangler to validate the production package without publishing it.
-Local builds do not deploy Convex. Worker Previews has no dry-run mode.
-
-After provider setup, build before a manual preview:
+## Validate
 
 ```sh
-pnpm run build
-pnpm run deploy:preview --worker-name tic-tac-toe-4x4x4
+pnpm exec vp check
+pnpm run check
+pnpm exec vp test
+VITE_CONVEX_URL=https://placeholder.convex.cloud pnpm run build:app
 ```
 
-Wrangler `--name` selects the Preview. Workers Builds supplies the parent Worker name.
+The placeholder is for validation only. Alchemy supplies the real deployment URL
+inside the hosting deploy. TanStack renders the game shell per request and
+prerenders `/about`; authentication and game subscriptions run in the browser.
 
-## Why Workers
-
-Cloudflare Pages works well for static apps, but several important settings live
-in the dashboard: build command, output directory, and Pages-specific deploy
-behavior.
-
-With Workers Static Assets, the deploy shape is split cleanly: Cloudflare's Git
-build step runs `pnpm run build`, production deploys run `pnpm run deploy`, and
-branch previews run `pnpm run deploy:preview`. `wrangler.jsonc` describes the
-assets and SPA fallback without hard-coding the Worker name. That makes the
-deployment easier to audit, easier for agents to modify, and easier for users
-to reproduce.
-
-## Read the history
-
-```sh
-git log --oneline --reverse
-```
-
-The history is intentionally written as a tutorial. `REPO_HISTORY.md` explains
-what each numbered commit added and why.
+See [the migration recipe](docs/alchemy-migration.md) before moving another app.
